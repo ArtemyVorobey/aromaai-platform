@@ -5,7 +5,26 @@ from typing import List, Optional
 import os, json, re
 from model import predict_synthesis
 import database as db
+import joblib
+import numpy as np
 
+model = joblib.load("model.pkl")
+
+def predict_molecule(smiles: str):
+    from rdkit import Chem
+    from rdkit.Chem import Descriptors
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return None
+    features = [
+        Descriptors.MolWt(mol),
+        Descriptors.MolLogP(mol),
+        Descriptors.NumHDonors(mol),
+        Descriptors.NumHAcceptors(mol),
+        Descriptors.RingCount(mol)
+    ]
+    pred = model.predict([features])[0]
+    return int(pred)
 app = FastAPI(
     title="AromaAI Platform",
     version="0.1.0",
@@ -60,10 +79,18 @@ def is_valid_molecule(s: str) -> bool:
 def read_root():
     return {"message": "AromaAI backend работает"}
 
-@app.post("/predict", response_model=PredictResponse, tags=["predict"])
+@app.post("/predict", response_model=PredictResponse)
 def predict(data: PredictRequest):
-    if not is_valid_molecule(data.molecule):
-        raise HTTPException(status_code=422, detail="Недопустимый формат молекулы")
+    predicted_label = predict_molecule(data.molecule)
+    if predicted_label is None:
+        raise HTTPException(status_code=422, detail="Некорректная молекула")
+
+    # Возвращаем объект PredictResponse
+    return PredictResponse(
+        input=data.molecule,
+        predicted_label=predicted_label,
+        confidence=None  # можно позже добавить вероятность/score
+    )
 
     path, confidence = predict_synthesis(data.molecule)
     db.add_history(data.molecule, path, confidence)

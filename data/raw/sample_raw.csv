@@ -1,0 +1,6 @@
+id,feed_smiles,product_smiles,yield,temp_c,catalyst,time_min
+1,Cc1ccccc1O,Oc1ccccc1,72,450,Ni,30
+2,CCO,CC=O,45,400,Fe,20
+3,C1=CC=CC=C1,OC1=CC=CC=C1,60,430,Cu,25
+4,C(CO)O,CO,30,380,None,15
+5,CCN,CCN=O,55,420,Ni,40
